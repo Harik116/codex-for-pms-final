@@ -24,6 +24,12 @@ prompt library built from your own questions.
 
 ### 1.
 
+Q1: What do think is going on ?
+
 ### 2.
 
+Q2: I cant really read and interpret the agents.md  Summarize it in here on text 
+
 ### 3.
+
+Q3: If I were to start figuring out, what are the top 3 things I should ask?
