@@ -65,3 +65,9 @@ Sources: [Company wiki](https://app.notion.com/p/Company-3eac8516f5018120af01caa
 - Ask Ravi for pre/post-12 August acceptance, misses, declines and offer distribution by responder, compared with prior Augusts.
 - Ask Wen and Marcus to walk through routing/timeout interactions; trace Nadia's examples of both complaint types through callout logs.
 - No routing code or substantive ping data was examined this session; no root cause or rollback decision is established.
+- Module 2: all four September interviewees are handlers. Fast-disappearing offers: 3/4; quiet periods: 2/4; UI and alert needs prominent. Kip contrasts quiet Meteor Mite with exhausted Gale.
+- Read all 147 support tickets (29 June–7 September): primary categories total 30 fewer/no offers, 27 console usability/accessibility, 26 Supply, 15 disappearing offers, 14 filters, 8 notifications/phone interaction, 8 availability/profile, 6 access, 4 help, 3 reporting, 2 performance, 2 billing, 2 thanks.
+- Before 12 August: 40 tickets/44 days. Including release day: 107/27 days; strictly after 12 August: 105/26 days. Later rate ~4.4× earlier; release day contributes one disappearing offer and one filter ticket.
+- All 30 quiet-phone and 15 disappearing-offer tickets were filed on/after release; two describe both and are counted only as disappearing offers. Follow-ups persist into September; counts are tickets, not customers, and do not prove causation or absence before release.
+- Quiet-phone tickets concern Farlight, The Undertow, Corporal Ashgrove and Halfmoon, unlike interview responders. Interviews and tickets overlap on core symptoms; console-redesign recruitment and repeated support contacts change emphasis. Dark mode: 4 tickets; small badges: 2.
+- Next: test reported offer scarcity and response timing with ping data; compare responders and periods. No substantive ping analysis or routing-code inspection yet; why 60 seconds was chosen remains unknown.
