@@ -1,0 +1,62 @@
+<div id="rook-missed-ping-chart">
+  <h3>Missed offers before and after 4.2</h3>
+  <div class="rook-chart"></div>
+  <div class="text-small text-muted">Before: 29 Jun–9 Aug · After: 17 Aug–6 Sep 2026 · Mixed release week excluded</div>
+</div>
+<style>
+  #rook-missed-ping-chart { display: grid; gap: calc(var(--font-size-base) * 0.75); }
+  #rook-missed-ping-chart h3 { padding-right: 90px; }
+  #rook-missed-ping-chart svg { display: block; width: 100%; }
+  #rook-missed-ping-chart svg text { fill: var(--foreground); font-size: 12px; font-weight: 400; }
+  #rook-missed-ping-chart .domain, #rook-missed-ping-chart .tick line { stroke: var(--border); }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script>
+(() => {
+  const root = document.getElementById('rook-missed-ping-chart');
+  const container = root.querySelector('.rook-chart');
+  const observations = [
+    { period: 'Before', missed: 24, total: 1034 },
+    { period: 'After', missed: 73, total: 485 }
+  ].map(row => ({ ...row, rate: 100 * row.missed / row.total }));
+  function draw() {
+    const width = Math.max(280, container.getBoundingClientRect().width);
+    const height = 260;
+    const margin = { top: 24, right: 16, bottom: 58, left: 76 };
+    const plotWidth = width - margin.left - margin.right;
+    const plotHeight = height - margin.top - margin.bottom;
+    container.replaceChildren();
+    const svg = d3.select(container).append('svg')
+      .attr('viewBox', `0 0 ${width} ${height}`)
+      .attr('role', 'img')
+      .attr('aria-label', 'Missed pings increased from 24 out of 1,034, or 2.3 percent before release, to 73 out of 485, or 15.1 percent after release. This comparison does not prove causation.');
+    const extent = d3.extent([0, ...observations.map(row => row.rate)]);
+    const horizontal = d3.scaleLinear().domain([extent[0], extent[1] * 1.25]).nice()
+      .range([margin.left, margin.left + plotWidth]);
+    const vertical = d3.scaleBand().domain(observations.map(row => row.period))
+      .range([margin.top, margin.top + plotHeight]).padding(0.5);
+    svg.append('rect').attr('data-chart-frame', '')
+      .attr('x', margin.left).attr('y', margin.top).attr('width', plotWidth).attr('height', plotHeight)
+      .attr('fill', 'none').attr('stroke', 'var(--border)');
+    svg.append('g').attr('transform', `translate(0,${margin.top + plotHeight})`)
+      .call(d3.axisBottom(horizontal).ticks(width < 400 ? 3 : 4).tickFormat(value => `${value}%`));
+    svg.append('g').attr('transform', `translate(${margin.left},0)`)
+      .call(d3.axisLeft(vertical).tickSize(0)).call(group => group.select('.domain').remove())
+      .call(group => group.selectAll('text').attr('dx', '-5'));
+    svg.append('text').attr('class', 'axis-title').attr('data-axis', 'x')
+      .attr('x', margin.left + plotWidth / 2).attr('y', height - 8)
+      .attr('text-anchor', 'middle').text('Missed pings (%)');
+    svg.append('text').attr('class', 'axis-title').attr('data-axis', 'y')
+      .attr('x', 4).attr('y', 13).text('Period');
+    observations.forEach(row => {
+      svg.append('rect').attr('x', horizontal(0)).attr('y', vertical(row.period))
+        .attr('width', horizontal(row.rate) - horizontal(0)).attr('height', vertical.bandwidth())
+        .attr('fill', 'var(--viz-series-1)');
+      svg.append('text').attr('x', margin.left + 6).attr('y', vertical(row.period) - 8)
+        .text(`${row.rate.toFixed(1)}% · ${row.missed} of ${row.total.toLocaleString('en-US')} pings`);
+    });
+  }
+  new ResizeObserver(draw).observe(container);
+  draw();
+})();
+</script>

@@ -1,0 +1,60 @@
+<div id="rook-four-offer-decline">
+  <h3>Four responders received 83% fewer offers</h3>
+  <div class="text-small">Farlight · Meteor Mite · The Undertow · Vesper</div>
+  <div class="offer-chart"></div>
+  <div class="text-small text-muted">Before: 29 Jun–9 Aug, 6 weeks · After: 17 Aug–6 Sep, 3 weeks · Release week excluded</div>
+</div>
+<style>
+  #rook-four-offer-decline { display: grid; gap: calc(var(--font-size-base) * 0.75); }
+  #rook-four-offer-decline h3 { padding-right: 90px; }
+  #rook-four-offer-decline svg { display: block; width: 100%; }
+  #rook-four-offer-decline svg text { fill: var(--foreground); font-size: 12px; font-weight: 400; }
+  #rook-four-offer-decline .domain, #rook-four-offer-decline .tick line { stroke: var(--border); }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script>
+(() => {
+  const root = document.getElementById('rook-four-offer-decline');
+  const container = root.querySelector('.offer-chart');
+  const observations = [
+    { period: 'Before', offers: 294, weeks: 6 },
+    { period: 'After', offers: 25, weeks: 3 }
+  ].map(row => ({ ...row, weekly: row.offers / row.weeks }));
+  function draw() {
+    const width = Math.max(280, container.getBoundingClientRect().width);
+    const height = 280;
+    const margin = { top: 28, right: 16, bottom: 58, left: 76 };
+    const plotWidth = width - margin.left - margin.right;
+    const plotHeight = height - margin.top - margin.bottom;
+    container.replaceChildren();
+    const svg = d3.select(container).append('svg')
+      .attr('viewBox', `0 0 ${width} ${height}`).attr('role', 'img')
+      .attr('aria-label', 'Combined offers for Farlight, Meteor Mite, The Undertow and Vesper fell from 49 per week before release to 8.3 per week afterward, a decline of 83 percent. Before: 294 offers over six weeks. After: 25 offers over three weeks. The mixed release week is excluded. This does not establish causation.');
+    const extent = d3.extent([0, ...observations.map(row => row.weekly)]);
+    const horizontal = d3.scaleLinear().domain([extent[0], extent[1] * 1.05]).nice()
+      .range([margin.left, margin.left + plotWidth]);
+    const vertical = d3.scaleBand().domain(observations.map(row => row.period))
+      .range([margin.top, margin.top + plotHeight]).padding(0.5);
+    svg.append('rect').attr('data-chart-frame', '').attr('x', margin.left).attr('y', margin.top)
+      .attr('width', plotWidth).attr('height', plotHeight).attr('fill', 'none').attr('stroke', 'var(--border)');
+    svg.append('g').attr('transform', `translate(0,${margin.top + plotHeight})`)
+      .call(d3.axisBottom(horizontal).ticks(width < 400 ? 3 : 5));
+    svg.append('g').attr('transform', `translate(${margin.left},0)`)
+      .call(d3.axisLeft(vertical).tickSize(0)).call(group => group.select('.domain').remove())
+      .call(group => group.selectAll('text').attr('dx', '-5'));
+    svg.append('text').attr('class', 'axis-title').attr('data-axis', 'x')
+      .attr('x', margin.left + plotWidth / 2).attr('y', height - 8).attr('text-anchor', 'middle')
+      .text('Combined offers per week');
+    svg.append('text').attr('class', 'axis-title').attr('data-axis', 'y').attr('x', 4).attr('y', 15).text('Period');
+    observations.forEach(row => {
+      svg.append('rect').attr('x', horizontal(0)).attr('y', vertical(row.period))
+        .attr('width', horizontal(row.weekly) - horizontal(0)).attr('height', vertical.bandwidth())
+        .attr('fill', 'var(--viz-series-1)');
+      svg.append('text').attr('x', margin.left + 6).attr('y', vertical(row.period) - 8)
+        .text(`${row.weekly.toFixed(1)} per week`);
+    });
+  }
+  new ResizeObserver(draw).observe(container);
+  draw();
+})();
+</script>

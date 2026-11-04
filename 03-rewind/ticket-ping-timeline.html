@@ -1,0 +1,154 @@
+<div id="rook-ticket-ping-timeline">
+  <h3>Ping changes and support reports line up</h3>
+  <div class="text-small text-muted">Weekly totals · 12 August release marked on each chart</div>
+  <div class="plot-group"><div>Missed offers across all responders</div><div data-panel="misses"></div></div>
+  <div class="plot-group"><div>Offers to Farlight and The Undertow combined</div><div data-panel="offers"></div></div>
+  <div class="plot-group"><div>Support tickets filed</div><div class="series-legend" aria-label="Ticket categories"></div><div data-panel="tickets"></div></div>
+  <div class="text-small text-muted">Weeks run Monday–Sunday; 10 Aug includes pre- and post-release days. 7 Sep*: one day of tickets only; ping data ends 6 Sep. Hover or tap for counts.</div>
+  <div class="tooltip" role="tooltip" hidden></div>
+</div>
+<style>
+  #rook-ticket-ping-timeline { position: relative; display: grid; gap: calc(var(--font-size-base) * 1); }
+  #rook-ticket-ping-timeline h3 { padding-right: 90px; }
+  #rook-ticket-ping-timeline .plot-group { display: grid; gap: calc(var(--font-size-base) * 0.25); }
+  #rook-ticket-ping-timeline svg { display: block; width: 100%; }
+  #rook-ticket-ping-timeline svg text { fill: var(--foreground); font-size: 12px; font-weight: 400; }
+  #rook-ticket-ping-timeline .domain, #rook-ticket-ping-timeline .tick line { stroke: var(--border); }
+  #rook-ticket-ping-timeline .series-legend { display: flex; flex-wrap: wrap; gap: calc(var(--font-size-base) * 0.75); }
+  #rook-ticket-ping-timeline .series-key { display: inline-flex; align-items: center; gap: 5px; background: transparent; border: 0; padding: 0; color: var(--foreground); font: inherit; }
+  #rook-ticket-ping-timeline .series-key[aria-pressed="false"] { opacity: 0.45; }
+  #rook-ticket-ping-timeline .swatch { width: 10px; height: 10px; display: inline-block; }
+  #rook-ticket-ping-timeline .tooltip { position: absolute; pointer-events: none; z-index: 2; background: var(--popover); color: var(--popover-foreground); border: 1px solid var(--border); padding: 8px; max-width: 250px; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<script>
+(() => {
+  const root = document.getElementById('rook-ticket-ping-timeline');
+  const tooltip = root.querySelector('.tooltip');
+  const records = [
+    ['2026-06-29',172,132,3,12,12,0,0,6],
+    ['2026-07-06',170,131,4,12,11,0,0,6],
+    ['2026-07-13',174,133,6,11,12,0,0,8],
+    ['2026-07-20',176,132,5,12,13,0,0,5],
+    ['2026-07-27',170,132,4,13,12,0,0,7],
+    ['2026-08-03',172,134,2,12,12,0,0,7],
+    ['2026-08-10',177,96,38,10,11,0,7,20],
+    ['2026-08-17',158,104,28,3,4,8,3,27],
+    ['2026-08-24',162,108,24,1,1,12,3,32],
+    ['2026-08-31',165,120,21,0,1,8,2,25],
+    ['2026-09-07',0,0,0,0,0,2,0,4]
+  ].map(([week,pings,taken,missed,farlight,undertow,quiet,fast,total]) => ({
+    week, date: new Date(week + 'T00:00:00Z'), pings, taken, missed, farlight, undertow,
+    quiet, fast, total, other: total - quiet - fast, rate: pings ? 100 * missed / pings : null
+  }));
+  const categories = [
+    { key: 'quiet', label: 'Quiet phones', color: 'var(--viz-series-3)' },
+    { key: 'fast', label: 'Offers disappear', color: 'var(--viz-series-2)' },
+    { key: 'other', label: 'Other tickets', color: 'var(--muted)' }
+  ];
+  const visible = new Set(categories.map(category => category.key));
+  const legend = root.querySelector('.series-legend');
+  categories.forEach(category => {
+    const button = document.createElement('button');
+    button.type = 'button'; button.className = 'series-key cursor-interaction';
+    button.setAttribute('aria-pressed', 'true');
+    const swatch = document.createElement('span');
+    swatch.className = 'swatch'; swatch.style.background = category.color;
+    swatch.setAttribute('aria-hidden', 'true');
+    button.append(swatch, document.createTextNode(category.label));
+    button.addEventListener('click', () => {
+      if (visible.has(category.key)) visible.delete(category.key); else visible.add(category.key);
+      button.setAttribute('aria-pressed', String(visible.has(category.key)));
+      draw();
+    });
+    legend.append(button);
+  });
+  const day = 86400000;
+  const release = new Date('2026-08-12T00:00:00Z');
+  const formatDate = d3.utcFormat('%d %b');
+  function draw() {
+    tooltip.hidden = true;
+    for (const type of ['misses','offers','tickets']) {
+      const container = root.querySelector(`[data-panel="${type}"]`);
+      const width = Math.max(280, container.getBoundingClientRect().width);
+      const height = 190;
+      const margin = { top: 24, right: 12, bottom: 52, left: 68 };
+      const right = width - margin.right, bottom = height - margin.bottom;
+      const domain = d3.extent(records, record => record.date);
+      const horizontal = d3.scaleUtc().domain([domain[0], new Date(+domain[1] + 7 * day)])
+        .range([margin.left, right]);
+      const valueFor = record => type === 'misses' ? record.rate : type === 'offers' ? record.farlight + record.undertow : categories.filter(category => visible.has(category.key)).reduce((sum,category) => sum + record[category.key],0);
+      const measured = records.filter(record => type === 'tickets' || record.pings);
+      const extent = d3.extent([0, ...measured.map(valueFor)]);
+      const vertical = d3.scaleLinear().domain([extent[0], (extent[1] || 1) * 1.2]).nice().range([bottom, margin.top]);
+      container.replaceChildren();
+      const svg = d3.select(container).append('svg').attr('viewBox', `0 0 ${width} ${height}`)
+        .attr('role','img').attr('aria-label', type === 'misses' ? 'Weekly missed-ping percentages jump in release week and remain elevated.' : type === 'offers' ? 'Combined weekly offers to Farlight and The Undertow fall from about 24 to 7, 2 and 1.' : 'Weekly tickets grow after release; disappearing-offer tickets start August 12 and quiet-phone tickets start August 17.');
+      svg.append('rect').attr('data-chart-frame','').attr('x',margin.left).attr('y',margin.top)
+        .attr('width',right-margin.left).attr('height',bottom-margin.top)
+        .attr('fill','none').attr('stroke','var(--border)');
+      const tickDates = records.filter((record,index) => index % (width < 450 ? 5 : 2) === 0).map(record=>record.date);
+      svg.append('g').attr('transform',`translate(0,${bottom})`)
+        .call(d3.axisBottom(horizontal).tickValues(tickDates).tickFormat(date=>formatDate(date)));
+      svg.append('g').attr('transform',`translate(${margin.left},0)`)
+        .call(d3.axisLeft(vertical).ticks(3).tickFormat(value => type === 'misses' ? `${value}%` : value));
+      svg.append('text').attr('class','axis-title').attr('data-axis','y').attr('x',4).attr('y',13)
+        .text(type === 'misses' ? 'Missed (%)' : type === 'offers' ? 'Pings' : 'Tickets');
+      svg.append('text').attr('class','axis-title').attr('data-axis','x')
+        .attr('x',(margin.left+right)/2).attr('y',height-6).attr('text-anchor','middle').text('Week starting (2026)');
+      for (const record of measured) {
+        const barLeft = horizontal(new Date(+record.date + day));
+        const barRight = horizontal(new Date(+record.date + 6 * day));
+        if (type === 'tickets') {
+          let cumulative = 0;
+          for (const category of categories.filter(category=>visible.has(category.key))) {
+            const value = record[category.key];
+            svg.append('rect').attr('x',barLeft).attr('width',barRight-barLeft)
+              .attr('y',vertical(cumulative+value)).attr('height',vertical(cumulative)-vertical(cumulative+value))
+              .attr('fill',category.color);
+            cumulative += value;
+          }
+        } else {
+          const value = valueFor(record);
+          svg.append('rect').attr('x',barLeft).attr('width',barRight-barLeft)
+            .attr('y',vertical(value)).attr('height',bottom-vertical(value)).attr('fill','var(--viz-series-1)');
+        }
+        if (width >= 500 || record.week >= '2026-08-10') {
+          const value = valueFor(record);
+          svg.append('text').attr('x',(barLeft+barRight)/2).attr('y',vertical(value)-5)
+            .attr('text-anchor','middle').text(type === 'misses' ? value.toFixed(0) : `${value}${record.week==='2026-09-07'?'*':''}`);
+        }
+      }
+      svg.append('line').attr('x1',horizontal(release)).attr('x2',horizontal(release))
+        .attr('y1',margin.top).attr('y2',bottom).attr('stroke','var(--foreground)')
+        .attr('stroke-width',1).attr('stroke-dasharray','3 3');
+      svg.append('text').attr('x',horizontal(release)+4).attr('y',13).text('12 Aug');
+      const guide = svg.append('line').attr('data-chart-hover-guide','').attr('y1',margin.top).attr('y2',bottom)
+        .attr('stroke','var(--border)').attr('visibility','hidden');
+      const overlay = svg.append('rect').attr('data-chart-hit','').attr('data-chart-hover-overlay','cross-series')
+        .attr('x',margin.left).attr('y',margin.top).attr('width',right-margin.left).attr('height',bottom-margin.top)
+        .attr('fill','transparent');
+      function show(event) {
+        const [pointerX] = d3.pointer(event,svg.node());
+        const date = horizontal.invert(pointerX);
+        const index = Math.max(0,Math.min(records.length-1,Math.floor((+date-+records[0].date)/(7*day))));
+        const record = records[index];
+        guide.attr('x1',pointerX).attr('x2',pointerX).attr('visibility','visible');
+        const lines = [formatDate(record.date) + (record.week==='2026-09-07'?' (1 day only)':'–'+formatDate(new Date(+record.date+6*day)))];
+        if (type==='misses') lines.push(record.pings?`${record.missed}/${record.pings} missed (${record.rate.toFixed(1)}%)`:'Ping data not available');
+        if (type==='offers') lines.push(record.pings?`Farlight ${record.farlight} · Undertow ${record.undertow}`:'Ping data not available');
+        if (type==='tickets') for (const category of categories.filter(category=>visible.has(category.key))) lines.push(`${category.label}: ${record[category.key]}`);
+        tooltip.replaceChildren();
+        lines.forEach(line=>{const element=document.createElement('div');element.textContent=line;tooltip.append(element);});
+        tooltip.hidden=false;
+        const bounds=root.getBoundingClientRect();
+        tooltip.style.left=Math.max(0,Math.min(event.clientX-bounds.left+10,bounds.width-tooltip.offsetWidth))+'px';
+        tooltip.style.top=Math.max(0,event.clientY-bounds.top-tooltip.offsetHeight-10)+'px';
+      }
+      overlay.on('pointermove',show).on('click',show).on('pointerleave',()=>{tooltip.hidden=true;guide.attr('visibility','hidden');});
+    }
+  }
+  new ResizeObserver(draw).observe(root.querySelector('[data-panel="misses"]'));
+  draw();
+})();
+</script>
