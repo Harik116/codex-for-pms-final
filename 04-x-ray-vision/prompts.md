@@ -18,6 +18,32 @@ prompt library built from your own questions.
 
 ### 1.
 
+Visualize this information as a flowchart 
+
 ### 2.
 
+What is "something going wrong" mean to you?
+
 ### 3.
+
+my idea of something going wrong is different
+
+### 4.
+
+My idea of something going wrong - When a responder gets a ping, it vanishes before he can answer.
+
+### 5.
+
+what is marcus's question 
+
+### 6.
+
+Explain this more 
+
+### 7.
+
+How requests are allocated
+
+### 8.
+
+is priority given more to the right skills or proximity. 
