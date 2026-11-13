@@ -15,6 +15,20 @@ prompt library built from your own questions.
 
 ### 1.
 
+what are all the skills you have 
+
 ### 2.
 
+show me the code for skill creator in a word doc 
+
 ### 3.
+
+ultimately what is it coded in ? Python?
+
+### 4.
+
+what are markdown files/format?
+
+### 5.
+
+I want to test this out on module 5
